@@ -98,16 +98,31 @@ def drop_useless(data_frame:pd.DataFrame, output_path):
     data_frame.drop(['unix', 'tradecount', 'count'], axis=1, inplace=True)
     data_frame.to_csv(output_path, index=False)
 
+def draw_plot(data_frame:pd.DataFrame, data_path:str):
+    figure_path = data_path.split('/')[:-1]
+    figure_path = '/'.join(figure_path) + '/figure.jpg'
+    print(figure_path)
+    plt.figure(figsize=(25, 10))
+    statistic_open = data_frame['open']
+    statistic_close = data_frame['close']
+    plt.plot(statistic_open, label='open', color='red')
+    plt.plot(statistic_close, label='close', color='green')
+    plt.legend()
+    plt.savefig(figure_path)
+
 if __name__ == "__main__":
     args = preprocess_args().parse()
     raw_data_path = args.raw_data_path
     output_path = args.output_path
     assert raw_data_path, "Please set data root of csv file"
     data_frame =  pd.read_csv(raw_data_path)
+    data_frame['date'] = pd.to_datetime(data_frame['date'])
     # drop_duplicated(data_frame, output_path)
     # convert_date_format(data_frame, output_path)
     # sort_descending(data_frame, output_path)
     # check_missing(data_frame, output_path)
     # drop_useless(data_frame, output_path)
-    check_error(data_frame, output_path)
+    # check_error(data_frame, output_path)
+    draw_plot(data_frame, raw_data_path)
+
 
