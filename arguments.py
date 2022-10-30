@@ -30,3 +30,9 @@ class network_args(base_args):
     def __init__(self) -> None:
         super().__init__()
         self.initialized = True
+
+class trainer_args(base_args):
+    def __init__(self) -> None:
+        super().__init__()
+        self.parser.add_argument('--cfg_file', default='config.yaml', type=str, help='root of config file')
+        self.initialized = True

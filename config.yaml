@@ -1,0 +1,16 @@
+# dataset
+root_dir: /home/lzh/datasets/crypto_datasets/BTC_hourly/Binance_BTCUSDT_1hour_aft_preprocess5.csv
+history_window: 3
+predict_window: 3
+
+# model params
+feature_dim: 6
+hidden_dim: 16
+output_dim: 1
+
+# train params
+lr: 0.0005
+epoch: 100
+batch_size: 8
+momentum: 0.9
+weight_decay: 0.0001
