@@ -4,7 +4,7 @@ define arguments here
 
 import argparse
 
-class base_args():
+class base_args:
     def __init__(self) -> None:
         self.parser = argparse.ArgumentParser()
         self.initialized = False
@@ -20,3 +20,8 @@ class preprocess_args(base_args):
         self.parser.add_argument('--output_path', type=str, help='data root of csv file')
         self.initialized = True
 
+class dataset_args(base_args):
+    def __init__(self) -> None:
+        super().__init__()
+        self.parser.add_argument('--root_dir', type=str, help='data root of csv file')
+        self.initialized = True
