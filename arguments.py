@@ -25,3 +25,8 @@ class dataset_args(base_args):
         super().__init__()
         self.parser.add_argument('--root_dir', type=str, help='data root of csv file')
         self.initialized = True
+
+class network_args(base_args):
+    def __init__(self) -> None:
+        super().__init__()
+        self.initialized = True
