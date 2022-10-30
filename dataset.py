@@ -24,7 +24,6 @@ class crypto_dataset:
         self._build_samples()
     
     def group_tensors(self):
-        from IPython import embed; embed()
         return [self.npy_data, self.npy_label]
     
     def _read_csv_data(self):
