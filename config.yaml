@@ -9,7 +9,8 @@ hidden_dim: 16
 output_dim: 1
 
 # train params
-lr: 0.0005
+lr: 0.0001
+max_lr: 0.001
 epoch: 1
 batch_size: 8
 momentum: 0.9
