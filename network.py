@@ -53,7 +53,7 @@ class classification_node(nn.Module):
         # decode_feature shape: [batch_szie, hidden_dim // 4]
         classification_output = self._classification_head(decode_feature)
         # classification_output shape: [batch_szie, output_channel]
-        return F.sigmoid(classification_output)
+        return F.sigmoid(classification_output).squeeze()
 
 class crypto_network(nn.Module):
     def __init__(self, input_channel, output_channel, hidden_dim, history_window):
