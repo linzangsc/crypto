@@ -6,10 +6,11 @@ python3.8 dataset.py --root_dir /home/lzh/datasets/crypto_datasets/BTC_hourly/Bi
 
 import pandas as pd
 import numpy as np
+from torch.utils.data import Dataset, DataLoader
 
 from arguments import dataset_args
 
-class crypto_dataset:
+class crypto_dataset(Dataset):
     def __init__(self, root_dir, history_window, predict_window) -> None:
         self.root_dir = root_dir
         self._history_window = history_window
@@ -23,9 +24,16 @@ class crypto_dataset:
         self._build_shape()
         self._build_samples()
     
+    def __getitem__(self, idx):
+        assert idx < self.num_samples
+        return [self.npy_data[idx], self.npy_label[idx]]
+
+    def __len__(self):
+        return self.num_samples
+
     def group_tensors(self):
         return [self.npy_data, self.npy_label]
-    
+
     def _read_csv_data(self):
         self._data_frame = pd.read_csv(self.root_dir)
         data_length = self._data_frame.shape[0]
@@ -67,3 +75,7 @@ if __name__ == "__main__":
     assert root_dir, "please input root dir of csv file"
     dataset = crypto_dataset(root_dir, 3, 3)
     data_and_label = dataset.group_tensors()
+    data_loader = DataLoader(dataset, batch_size=8, shuffle=False)
+    for epoch in range(100):
+        for iter, data in enumerate(data_loader):
+            print(iter)
