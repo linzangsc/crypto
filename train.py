@@ -36,11 +36,11 @@ class crypto_trainer:
     def _data_loader_setup(self):
         print(f"loading data...")
         start_time = time.time()
-        self.dataset = crypto_dataset(self.config['root_dir'],
-                                      self.config['history_window'], self.config['predict_window'])
+        self.dataset = crypto_dataset(self.config)
         self.data_loader = DataLoader(self.dataset, batch_size=self.config['batch_size'],
                                       shuffle=False, drop_last=True)
-        self._total_step = self.dataset.num_samples // self.config['batch_size'] * self.config['epoch']
+        self._iter_per_epoch = self.dataset.num_samples // self.config['batch_size']
+        self._total_step = self._iter_per_epoch * self.config['epoch']
         print(f"data loaded, cost time {time.time() - start_time}")
 
     def _loss_function_setup(self):
@@ -65,25 +65,25 @@ class crypto_trainer:
     def train(self):
         training_start_time = self._before_train()
         for epoch in range(self.config['epoch']):
-            self._train_before_epoch(epoch)
-            self._train_in_epoch()
+            self._train_before_epoch()
+            self._train_in_epoch(epoch)
             self._train_after_epoch()
         self._after_train(training_start_time)
 
-    def _train_before_epoch(self, epoch):
-        print(f"epoch: {epoch}")
+    def _train_before_epoch(self):
+        pass
 
-    def _train_in_epoch(self):
+    def _train_in_epoch(self, epoch):
         for iter, (input_data, label) in enumerate(self.data_loader):
-            self._train_before_iter(iter)
+            self._train_before_iter()
             losses = self._train_in_iter(input_data, label)
-            self._train_after_iter(losses)
+            self._train_after_iter(epoch, iter, losses)
 
     def _train_after_epoch(self):
         pass
 
-    def _train_before_iter(self, iter):
-        print(f"iteration: {iter}")
+    def _train_before_iter(self):
+        pass
 
     def _train_in_iter(self, input_data, label):
         rise_prediction, fall_prediction = self.model(input_data)
@@ -101,8 +101,9 @@ class crypto_trainer:
             'fall_loss': fall_loss
         }
 
-    def _train_after_iter(self, losses: dict):
-        print(losses)
+    def _train_after_iter(self, epoch, iter, losses):
+        if iter % self.config['print_freq'] == 0:
+            print(f"epoch: {epoch}, iteration: {iter}/{self._iter_per_epoch}, {losses}")
 
 if __name__ == "__main__":
     args = trainer_args().parse()
