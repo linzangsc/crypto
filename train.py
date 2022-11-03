@@ -7,7 +7,7 @@ import yaml
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, SequentialSampler
 
 from arguments import trainer_args
 from network import crypto_network
@@ -33,14 +33,24 @@ class crypto_trainer:
         self.model = crypto_network(self.config['feature_dim'], self.config['output_dim'],
                                     self.config['hidden_dim'], self.config['history_window'])
 
-    def _data_loader_setup(self):
+    def _data_loader_setup(self, split_factor=0.8):
         print(f"loading data...")
         start_time = time.time()
-        self.dataset = crypto_dataset(self.config['root_dir'],
-                                      self.config['history_window'], self.config['predict_window'])
-        self.data_loader = DataLoader(self.dataset, batch_size=self.config['batch_size'],
-                                      shuffle=False, drop_last=True)
-        self._total_step = self.dataset.num_samples // self.config['batch_size'] * self.config['epoch']
+        self.dataset = crypto_dataset(self.config)
+
+        indices = list(range(self.dataset.num_samples))
+        self._num_train_sample = int(self.dataset.num_samples * split_factor)
+        train_indices= indices[:self._num_train_sample]
+        val_indices = indices[self._num_train_sample:]
+        train_sampler = SequentialSampler(train_indices)
+        val_sampler = SequentialSampler(val_indices)
+
+        self.train_data_loader = DataLoader(self.dataset, batch_size=self.config['batch_size'],
+                                            shuffle=False, sampler=train_sampler, drop_last=True)
+        self.val_data_loader = DataLoader(self.dataset, batch_size=self.config['batch_size'],
+                                          shuffle=False, sampler=val_sampler)
+        self._iter_per_epoch = self._num_train_sample // self.config['batch_size']
+        self._total_step = self._iter_per_epoch * self.config['epoch']
         print(f"data loaded, cost time {time.time() - start_time}")
 
     def _loss_function_setup(self):
@@ -65,25 +75,25 @@ class crypto_trainer:
     def train(self):
         training_start_time = self._before_train()
         for epoch in range(self.config['epoch']):
-            self._train_before_epoch(epoch)
-            self._train_in_epoch()
+            self._train_before_epoch()
+            self._train_in_epoch(epoch)
             self._train_after_epoch()
         self._after_train(training_start_time)
 
-    def _train_before_epoch(self, epoch):
-        print(f"epoch: {epoch}")
+    def _train_before_epoch(self):
+        pass
 
-    def _train_in_epoch(self):
-        for iter, (input_data, label) in enumerate(self.data_loader):
-            self._train_before_iter(iter)
+    def _train_in_epoch(self, epoch):
+        for iter, (input_data, label) in enumerate(self.train_data_loader):
+            self._train_before_iter()
             losses = self._train_in_iter(input_data, label)
-            self._train_after_iter(losses)
+            self._train_after_iter(epoch, iter, losses)
 
     def _train_after_epoch(self):
         pass
 
-    def _train_before_iter(self, iter):
-        print(f"iteration: {iter}")
+    def _train_before_iter(self):
+        pass
 
     def _train_in_iter(self, input_data, label):
         rise_prediction, fall_prediction = self.model(input_data)
@@ -101,8 +111,9 @@ class crypto_trainer:
             'fall_loss': fall_loss
         }
 
-    def _train_after_iter(self, losses: dict):
-        print(losses)
+    def _train_after_iter(self, epoch, iter, losses):
+        if iter % self.config['print_freq'] == 0:
+            print(f"epoch: {epoch}, iteration: {iter}/{self._iter_per_epoch}, {losses}")
 
 if __name__ == "__main__":
     args = trainer_args().parse()

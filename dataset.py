@@ -11,19 +11,19 @@ from torch.utils.data import Dataset, DataLoader
 from arguments import dataset_args
 
 class crypto_dataset(Dataset):
-    def __init__(self, root_dir, history_window, predict_window) -> None:
-        self.root_dir = root_dir
-        self._history_window = history_window
-        self._predict_window = predict_window
-        self.feature_dim = 6 #[open, high, low, close, volume, valid]
-        self.label_dim = 2 #[higher than profit, lower than loss]
-        self._profit_limit = 0
-        self._loss_limit = 0
+    def __init__(self, config) -> None:
+        self.root_dir = config['root_dir']
+        self._history_window = config['history_window']
+        self._predict_window = config['predict_window']
+        self._feature_dim = config['feature_dim'] #[open, high, low, close, volume, valid]
+        self._label_dim = config['label_dim'] #[higher than profit, lower than loss]
+        self._profit_limit = config['profit_limit']
+        self._loss_limit = config['loss_limit']
         self.num_samples = 0
         self._read_csv_data()
         self._build_shape()
         self._build_samples()
-    
+
     def __getitem__(self, idx):
         assert idx < self.num_samples
         return [self.npy_data[idx], self.npy_label[idx]]
@@ -57,17 +57,22 @@ class crypto_dataset(Dataset):
 
     def _build_labels(self):
         for i in range(self.num_samples):
+            buy_price = self._data_frame.iloc[i + self._history_window]['close']
+            profit_price = buy_price * (1. + self._profit_limit)
+            loss_price = buy_price * (1. - self._loss_limit)
             for j in range(self._predict_window):
                 if self.npy_label[i, 0] and self.npy_label[i, 1]:
                     break
-                if self._data_frame.iloc[i + self._history_window + j]['high'] > self._profit_limit:
+                if not self._data_frame.iloc[i + self._history_window + j]['valid']:
+                    break
+                if self._data_frame.iloc[i + self._history_window + j]['high'] > profit_price:
                     self.npy_label[i, 0] = 1
-                if self._data_frame.iloc[i + self._history_window + j]['low'] < self._loss_limit:
+                if self._data_frame.iloc[i + self._history_window + j]['low'] < loss_price:
                     self.npy_label[i, 1] = 1
 
     def _build_shape(self):
-        self._sample_shape = (self.num_samples, self._history_window, self.feature_dim)
-        self._label_shape = (self.num_samples, self.label_dim)
+        self._sample_shape = (self.num_samples, self._history_window, self._feature_dim)
+        self._label_shape = (self.num_samples, self._label_dim)
 
 if __name__ == "__main__":
     args = dataset_args().parse()
