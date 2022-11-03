@@ -15,8 +15,8 @@ class crypto_dataset(Dataset):
         self.root_dir = config['root_dir']
         self._history_window = config['history_window']
         self._predict_window = config['predict_window']
-        self.feature_dim = config['feature_dim'] #[open, high, low, close, volume, valid]
-        self.label_dim = config['label_dim'] #[higher than profit, lower than loss]
+        self._feature_dim = config['feature_dim'] #[open, high, low, close, volume, valid]
+        self._label_dim = config['label_dim'] #[higher than profit, lower than loss]
         self._profit_limit = config['profit_limit']
         self._loss_limit = config['loss_limit']
         self.num_samples = 0
@@ -71,8 +71,8 @@ class crypto_dataset(Dataset):
                     self.npy_label[i, 1] = 1
 
     def _build_shape(self):
-        self._sample_shape = (self.num_samples, self._history_window, self.feature_dim)
-        self._label_shape = (self.num_samples, self.label_dim)
+        self._sample_shape = (self.num_samples, self._history_window, self._feature_dim)
+        self._label_shape = (self.num_samples, self._label_dim)
 
 if __name__ == "__main__":
     args = dataset_args().parse()
